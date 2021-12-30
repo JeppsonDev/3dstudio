@@ -39,6 +39,21 @@ namespace Umu
             std::cout << "Decreace supported OpenGL version if needed." << std::endl;
         }
 
+        // Create Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        //ImGui::StyleColorsClassic();
+
+        // Set Platform/Renderer backends
+        ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
+        ImGui_ImplOpenGL3_Init(NULL);
+
         glPointSize(5.0);
         glLineWidth(1.0);
         glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -48,20 +63,64 @@ namespace Umu
 
     OpenGLWindow::~OpenGLWindow(void)
     {
-
+        // Cleanup ImGui
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
     }
 
-    void OpenGLWindow::start(AssimpLoader *loader, Render3D *renderer)
-    {
-        renderer->prepare(loader->getVertices(), loader->getIndicies());
+    //-----------------------------------------PUBLIC------------------------------------------//
 
+    void OpenGLWindow::DrawGui()
+    {
+        Gui::render();
+    }
+
+    void OpenGLWindow::start(Scene *scene, Render3D *renderer)
+    {
         glfwSetKeyCallback(glfwWindow, OpenGLInput::onKeyEvent);
+        glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetCursorPosCallback(glfwWindow, OpenGLInput::onMouseEvent);
 
         while(!glfwWindowShouldClose(glfwWindow))
         {
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            DrawGui();
+
             renderer->render();
+            scene->render(renderer);
+
+            //Render imgui
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            if(OpenGLInput::isKeyPressed("shift"))
+            {
+                glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+            else if(OpenGLInput::isKeyReleased("shift"))
+            {
+                glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+
+            glfwSetFramebufferSizeCallback(glfwWindow , onWindowResize);
+
             glfwSwapBuffers(glfwWindow);
-            glfwWaitEvents();
+            glfwPollEvents();
         }
     }
+
+    void OpenGLWindow::onWindowResize(GLFWwindow* window, int width, int height)
+    {
+        if(glfwGetCurrentContext() == nullptr)
+            return;
+
+        glViewport(0.0, 0.0, width, height);
+    }
+
+    //-----------------------------------------PRIVATE------------------------------------------//
 }

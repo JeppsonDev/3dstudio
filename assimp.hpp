@@ -9,33 +9,43 @@
 #include <iostream>
 #include <stdint.h>
 #include <vector>
+#include "mesh.hpp"
 
 namespace Umu
 {
+    struct MeshData
+    {
+        std::vector<float> vertices;
+        std::vector<unsigned int> indices;
+        std::vector<float> normals;
+        std::vector<float> textureCoordinates;
+    };
+
+    struct AssimpResult
+    {
+        std::vector<MeshData> meshes;
+    };
+
     class AssimpLoader
     {
         public:
-            AssimpLoader(void);
-            ~AssimpLoader(void);
-            
-            bool load(std::string file);
-            void print(void);
-            
-            std::vector<float> getVertices();
-            std::vector<unsigned int> getIndicies();
+            static AssimpResult load(std::string file);
+            static void print(void);
         private:
-            void processStart(void);
-            bool processModels(void);
-            void processMeshes(void);
-            bool processMesh(const aiMesh *mesh);
+            static void processStart();
+            static bool processModels();
+            static void processMeshes();
+            static MeshData processMesh(const aiMesh *mesh);
         private:
-            Assimp::Importer m_importer;
-            const aiScene *m_pScene;
-            const aiNode *modelNode;
-
-            std::vector<const aiNode*> m_aiNodeBuffer;
-            
-            std::vector<float> vertices;
-            std::vector<unsigned int> indices;
+            static Assimp::Importer m_importer;
+            static const aiScene *m_pScene;
+            static const aiNode *modelNode;
+            static std::vector<const aiNode*> m_aiNodeBuffer;
+            static std::vector<float> vertices;
+            static std::vector<unsigned int> indices;
+            static std::vector<float> normals;
+            static std::vector<float> textureCoordinates;
+            static std::vector<MeshData> meshes;
+            static AssimpResult outResult;
     };
 }

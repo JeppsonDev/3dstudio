@@ -6,23 +6,34 @@ namespace Umu
     {
         m_program = initProgram(vShader, fShader);
 
-        //TODO: Figure out how to abstract things like GenVertexArrays etc
-        //into seperate functions
-        start();
-        glGenVertexArrays(1, &vao);
-        bindVAO();
+        //TODO: All of these variables can be removed and put directly into m_properties
+        m_vPosition = glGetAttribLocation(m_program, "vPosition");
+        m_vNormal = glGetAttribLocation(m_program, "vNormal");
+        m_uModel = glGetUniformLocation(m_program, "u_Model");
+        m_uView = glGetUniformLocation(m_program, "u_View");
+        m_uProjection = glGetUniformLocation(m_program, "u_Projection");
+        m_uLightPosition = glGetUniformLocation(m_program, "u_LightPosition");
+        m_uAmbientLight = glGetUniformLocation(m_program, "u_AmbientLight");
+        m_uLightIntensity = glGetUniformLocation(m_program, "u_LightIntensity");
+        m_uAmbientConstant = glGetUniformLocation(m_program, "u_AmbientConstant");
+        m_uDiffuseConstant = glGetUniformLocation(m_program, "u_DiffuseConstant");
+        m_uSpecularConstant = glGetUniformLocation(m_program, "u_SpecularConstant");
 
-        glGenBuffers( 1, &vBuffer);
-        glBindBuffer( GL_ARRAY_BUFFER, vBuffer);
-
-        glGenBuffers(1, &iBuffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iBuffer);
-
-        //TODO:: This.. maybe shouldnt be in the base class
-        locVertices = glGetAttribLocation(m_program, "vPosition");
-
-        unbindVAO();
-        stop();
+        //Register properties
+        m_properties["vPosition"] = m_vPosition;
+        m_properties["vNormal"] = m_vNormal;
+        m_properties["vTexCoords"] = glGetAttribLocation(m_program, "vTexCoords");
+        m_properties["u_Model"] = m_uModel;
+        m_properties["u_View"] = m_uView;
+        m_properties["u_Projection"] = m_uProjection;
+        m_properties["u_LightPosition"] = m_uLightPosition;
+        m_properties["u_AmbientLight"] = m_uAmbientLight;
+        m_properties["u_LightIntensity"] = m_uLightIntensity;
+        m_properties["u_AmbientConstant"] = m_uAmbientConstant;
+        m_properties["u_DiffuseConstant"] = m_uDiffuseConstant;
+        m_properties["u_SpecularConstant"] = m_uSpecularConstant;
+        m_properties["u_Shininess"] = glGetUniformLocation(m_program, "u_Shininess");
+        m_properties["u_Texture"] = glGetUniformLocation(m_program, "u_Texture");
     }
 
     Shader::~Shader()
@@ -30,26 +41,40 @@ namespace Umu
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
+    void Shader::setMat4(std::string uniformKey, mat4 matrix)
+    {
+        glUniformMatrix4fv(getProperty(uniformKey), 1, false, value_ptr(matrix));
+    }
+
+    void Shader::setVec3(std::string uniformKey, vec3 vector)
+    {
+        glUniform3fv(getProperty(uniformKey), 1, value_ptr(vector));
+    }
+
+    void Shader::setFloat(std::string uniformKey, float val)
+    {
+        glUniform1f(getProperty(uniformKey), val);
+    }
+
+    void Shader::setInt(std::string uniformKey, int val)
+    {
+        glUniform1i(getProperty(uniformKey), val);
+    }
+
+    GLuint Shader::getProperty(std::string key)
+    {
+        if(m_properties.find(key) == m_properties.end())
+        {
+            std::cerr << "COULD NOT FIND PROPERTY " << key << std::endl;
+            return -1;
+        }
+        
+        return m_properties[key];
+    }
 
     void Shader::start()
     {
         glUseProgram(m_program);
-    }
-
-    void Shader::bindVAO()
-    {
-        glBindVertexArray(vao);
-    }
-
-    void Shader::prepareReadData()
-    {
-        glVertexAttribPointer(locVertices, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-        glEnableVertexAttribArray(locVertices);
-    }
-
-    void Shader::unbindVAO()
-    {
-        glBindVertexArray(0);
     }
 
     void Shader::stop()
@@ -58,7 +83,6 @@ namespace Umu
     }
 
     //-----------------------------------------PRIVATE------------------------------------------//
-
     std::string Shader::readShaderSource(const std::string shaderFile)
     {
         std::string shaderSource;

@@ -6,19 +6,31 @@
 #  Modified by Filip Henningsson, floop@cs.umu.se
 #
 SRC = ./
-TARGET = main
+OUT = $(SRC)
+IMGUI_DIR = ./ImGui
+TARGET = $(OUT)/main
 
-OBJS = $(SRC)/main.o $(SRC)/assimp.o $(SRC)/openglwindow.o $(SRC)/render3d.o $(SRC)/shader.o $(SRC)/mesh.o $(SRC)/teddyshader.o $(SRC)/openglinput.o
+OBJS = $(OUT)/texture2d.o $(OUT)/light.o $(OUT)/transform.o $(OUT)/object.o $(OUT)/scene.o $(OUT)/model.o $(OUT)/main.o $(OUT)/assimp.o $(OUT)/openglwindow.o $(OUT)/render3d.o $(OUT)/shader.o $(OUT)/mesh.o $(OUT)/openglinput.o  $(OUT)/camera.o $(OUT)/gui.o \
+	$(IMGUI_DIR)/imgui.o \
+	$(IMGUI_DIR)/imgui_demo.o \
+	$(IMGUI_DIR)/imgui_draw.o \
+	$(IMGUI_DIR)/imgui_tables.o \
+	$(IMGUI_DIR)/imgui_widgets.o \
+	$(IMGUI_DIR)/imgui_impl_glfw.o \
+	$(IMGUI_DIR)/imgui_impl_opengl3.o \
+	$(IMGUI_DIR)/ImGuiFileDialog/ImGuiFileDialog.o
 
 CXX = g++
 
 DBFLAGS = -O0 -g3 -ggdb3 -fno-inline
 #DBFLAGS = -O2
-WFLAGS  = -Wall -std=c++11
+WFLAGS  = -Wall -std=c++2a
 
 # Uncomment if you have local libraries or headers in subfolders lib and include
-IFLAGS = #-Iinclude
-LFLAGS = #-Llib 
+IFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/ImGuiFileDialog
+LFLAGS = #-Llib
+
+IMGUIFLAGS = -DIMGUI_IMPL_OPENGL_LOADER_GLEW
 
 ifeq ($(OS), Windows_NT)
 # -DWINDOWS_BUILD needed to deal with Windows use 0f \ instead of / in path
@@ -34,9 +46,7 @@ LGLFLAGS = `pkg-config --libs glfw3` -lm -ldl -lGL -lGLEW -lglfw3 -lassimp
 ELDFLAGS = -export-dynamic -lXext -lX11 
 endif
 
-CXXFLAGS = $(WFLAGS) $(DFLAGS) $(GLFLAGS)
-
-CXXFLAGS = $(DBFLAGS) $(DEFS) $(WFLAGS) $(IFLAGS) $(DFLAGS) $(GLFLAGS)
+CXXFLAGS = $(DBFLAGS) $(DEFS) $(WFLAGS) $(IFLAGS) $(DFLAGS) $(GLFLAGS) $(IMGUIFLAGS)
 LDFLAGS  = $(ELDFLAGS) $(LGLFLAGS) $(OSLDFLAGS)
 
 

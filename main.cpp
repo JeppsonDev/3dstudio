@@ -1,27 +1,23 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include "assimp.hpp"
 #include "openglwindow.hpp"
 #include "render3d.hpp"
+#include "scene.hpp"
+#include "openglinput.hpp"
 
 int main(void) 
 {
-    Umu::AssimpLoader *loader = new Umu::AssimpLoader();
-
-    if(loader->load("teddy.obj")) 
-    {
-        std::cout << "Success" << std::endl;
-    }
-
-    loader->print();
-
-    Umu::OpenGLWindow *window = new Umu::OpenGLWindow("Title", 1920/2, 1080/2);
+    //Inititilize the engine
+    Umu::OpenGLWindow *window = new Umu::OpenGLWindow("Title", 960, 540);
     Umu::Render3D *renderer = new Umu::Render3D();
 
-    window->start(loader, renderer);
+    //Initilize the scene
+    Umu::Scene *scene = new Umu::Scene();
 
-    delete loader;
+    window->start(scene, renderer);
+
+    delete scene;
     delete window;
     delete renderer;
 

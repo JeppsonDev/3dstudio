@@ -7,12 +7,13 @@
 #include <memory>
 #include <cmath>
 #include <vector>
+#include <string>
 #include <stdint.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "teddyshader.hpp"
-#include "mesh.hpp"
+#include "assimp.hpp"
+#include "object.hpp"
 
 namespace Umu 
 {
@@ -23,11 +24,9 @@ namespace Umu
             ~Render3D(void);
 
             void render();
-            void prepare(std::vector<float> vertices, std::vector<unsigned int> indices);
+            void renderObject(Object *object);
 
-        private:
-            TeddyShader *m_pMainShader;
-            Mesh *m_pMainMesh;
-
+            void add(Model *model);
+            void loadModel(std::string filePath);
     };
 }

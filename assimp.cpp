@@ -2,72 +2,65 @@
 
 namespace Umu
 {
-    AssimpLoader::AssimpLoader()
-    {
+    //TODO: Again wtf bro
 
-    }
-
-    AssimpLoader::~AssimpLoader(void)
-    {
-        std::cout << "Destroyed AssimpLoader.cpp" << std::endl;
-    }
-
+    Assimp::Importer AssimpLoader::m_importer;
+    const aiScene *AssimpLoader::m_pScene;
+    const aiNode *AssimpLoader::modelNode;
+    std::vector<const aiNode*> AssimpLoader::m_aiNodeBuffer;
+    std::vector<float> AssimpLoader::vertices;
+    std::vector<unsigned int> AssimpLoader::indices;
+    std::vector<float> AssimpLoader::normals;
+    std::vector<float> AssimpLoader::textureCoordinates;
+    AssimpResult AssimpLoader::outResult;
+    std::vector<MeshData> AssimpLoader::meshes;
+    static int meshesProcessed = 0;
     //-----------------------------------------PUBLIC------------------------------------------//
 
-    bool AssimpLoader::load(std::string file)
+    AssimpResult AssimpLoader::load(std::string file)
     {
-        m_pScene = m_importer.ReadFile(file, aiProcess_JoinIdenticalVertices | aiProcess_Triangulate);
+        //TODO: Wtf bro
+        m_aiNodeBuffer.clear();
+        vertices.clear();
+        indices.clear();
+        normals.clear();
+        meshes.clear();
+        textureCoordinates.clear();
+        meshesProcessed = 0;
+
+        m_pScene = m_importer.ReadFile(file, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals | aiProcess_Triangulate | aiProcess_FixInfacingNormals | aiProcess_FindInvalidData | aiProcess_ValidateDataStructure);
 
         if (!m_pScene)
         {
-            return false;
+            return {};
         }
         else
         {
             processStart();
         }
-        return true;
+
+        outResult.meshes = meshes;
+
+        return outResult;
     }
 
     void AssimpLoader::print(void)
     {
         std::cout << "" << std::endl;  
-        std::cout << "Num meshes: " << m_pScene->mNumMeshes << std::endl;
-        std::cout << "Num vertices: " << vertices.size() << std::endl;
-        std::cout << "Num indicies: " << indices.size() << std::endl;
+        std::cout << "Num meshes: " << meshes.size() << std::endl;
         std::cout << "" << std::endl;  
 
-
-        for(unsigned int v = 0; v < vertices.size(); v += 3)
+        for(uint i = 0; i < meshes.size(); i++)
         {
-            std::cout << "  V[" << v << "].x: " << vertices.at(v) << std::endl;
-            std::cout << "  V[" << v << "].y: " << vertices.at(v+1) << std::endl;
-            std::cout << "  V[" << v << "].z: " << vertices.at(v+2) << std::endl;
-            std::cout << "" << std::endl;
+            std::cout << "Mesh[" << i << "]:" << std::endl;
+            std::cout << "Num vertices: " << meshes[i].vertices.size() << std::endl;
+            std::cout << "Num indicies: " << meshes[i].indices.size() << std::endl;
         }
-
-        for(unsigned int v = 0; v < indices.size(); v += 3)
-        {
-            std::cout << "  I[" << v << "].x: " << indices.at(v) << std::endl;
-            std::cout << "  I[" << v << "].y: " << indices.at(v+1) << std::endl;
-            std::cout << "  I[" << v << "].z: " << indices.at(v+2) << std::endl;
-            std::cout << "" << std::endl;
-        }
-    }
-
-    std::vector<float> AssimpLoader::getVertices(void)
-    {
-        return vertices;
-    }
-
-    std::vector<unsigned int> AssimpLoader::getIndicies(void)
-    {
-        return indices;
     }
 
     //-----------------------------------------PRIVATE------------------------------------------//
     
-    void AssimpLoader::processStart(void)
+    void AssimpLoader::processStart()
     {
         bool run = true;
         
@@ -81,7 +74,7 @@ namespace Umu
         processMeshes();
     }
 
-    bool AssimpLoader::processModels(void)
+    bool AssimpLoader::processModels()
     {
         for(unsigned int i = 0; i < m_aiNodeBuffer.size(); i++)
         {
@@ -102,7 +95,7 @@ namespace Umu
         return true;
     }
 
-    void AssimpLoader::processMeshes(void)
+    void AssimpLoader::processMeshes()
     {
         for(unsigned int i = 0; i < m_aiNodeBuffer.size(); i++)
         {
@@ -112,33 +105,48 @@ namespace Umu
             {
                 for(unsigned int j = 0; j < modelNode->mNumMeshes; j++) 
                 {
-                    processMesh(m_pScene->mMeshes[j]);
+                    meshes.push_back(processMesh(m_pScene->mMeshes[meshesProcessed]));
+                    
+                    //TODO: Fix this.. loop m_pScene->mNumMeshes instead or something
+                    meshesProcessed++;
                 }
             }
         }
     }
 
-    bool AssimpLoader::processMesh(const aiMesh *mesh)
+    MeshData AssimpLoader::processMesh(const aiMesh *mesh)
     {
+        vertices.clear();
+        normals.clear();
+        textureCoordinates.clear();
+        indices.clear();
+
         for(unsigned int v = 0; v < mesh->mNumVertices; v++)
         {
-            vertices.push_back(mesh->mVertices[v].x);
-            vertices.push_back(mesh->mVertices[v].y);
-            vertices.push_back(mesh->mVertices[v].z);
+            float x = mesh->mVertices[v].x;
+            float y = mesh->mVertices[v].y;
+            float z = mesh->mVertices[v].z;
 
-            //vertices.push_back(mesh->mNormals[v].x);
-            //vertices.push_back(mesh->mNormals[v].y);
-            //vertices.push_back(mesh->mNormals[v].z);
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
+
+            if(mesh->HasNormals())
+            {
+                normals.push_back(mesh->mNormals[v].x);
+                normals.push_back(mesh->mNormals[v].y);
+                normals.push_back(mesh->mNormals[v].z);
+            }
 
             if(mesh->HasTextureCoords(0))
             {
-                //vertices.push_back(mesh->mTextureCoords[0][v].x);
-                //vertices.push_back(mesh->mTextureCoords[0][v].y);
+                textureCoordinates.push_back(mesh->mTextureCoords[0][v].x);
+                textureCoordinates.push_back(mesh->mTextureCoords[0][v].y);
             }
             else 
             {
-                //vertices.push_back(0);
-                //vertices.push_back(0);
+                textureCoordinates.push_back(0);
+                textureCoordinates.push_back(0);
             }
         }
 
@@ -146,11 +154,15 @@ namespace Umu
         {
             aiFace face = mesh->mFaces[f];
 
-            indices.push_back(face.mIndices[0]);
-            indices.push_back(face.mIndices[1]);
-            indices.push_back(face.mIndices[2]);
+            for(unsigned int i = 0; i < face.mNumIndices; i++)
+            {
+                indices.push_back(face.mIndices[i]);
+            }
         }
 
-        return true;
+        std::cout << "Num vertices: " << vertices.size() << std::endl;
+        std::cout << "Num indicies: " << indices.size() << std::endl;
+
+        return {vertices, indices, normals, textureCoordinates};
     }
 }

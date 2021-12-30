@@ -2,115 +2,120 @@
 
 namespace Umu 
 {
-    Mesh::Mesh(std::vector<float> vertices, std::vector<unsigned int> indices)
+    Mesh::Mesh(std::vector<float> vertices, std::vector<uint> indices, std::vector<float> normals, std::vector<float> textureCoordinates)
     {
-        m_transformationMatrix = identity<mat4>();
         m_vertices = vertices;
         m_indices = indices;
+        m_normals = normals;
+        m_textureCoordinates = textureCoordinates;
+
+        prepare();
+        
     }
 
     Mesh::~Mesh()
     {
+    }
 
+    //------------------------------------PUBLIC STATIC------------------------------------------//
+    std::vector<Mesh*> Mesh::load(std::string pathToFile)
+    {
+        AssimpResult result = AssimpLoader::load(pathToFile);
+        std::vector<Mesh*> meshes;
+
+        if(fileExists(pathToFile))
+        {
+            for(uint i = 0; i < result.meshes.size(); i++)
+            {
+                meshes.push_back(new Mesh(result.meshes[i].vertices, result.meshes[i].indices, result.meshes[i].normals, result.meshes[i].textureCoordinates));
+            }
+
+            std::cout << pathToFile << " loaded" << std::endl;
+        }
+        else
+        {
+            std::cout << "File not found" << std::endl;
+        }     
+
+        return meshes;
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
 
-    //TODO: TEMP: This should be moved to some sort of "3Dstudio" class where 3D models can
-    // be moved around or something
-
-    bool r;
-    bool t;
-
-    void Mesh::render()
+    void Mesh::render() 
     {
-        //TODO: TEMP: Change this to an update loop eventually?
-        if(OpenGLInput::isKeyPressed("up"))
-        {
-            if(t)
-                translate(vec3(0,.1f,0));
-            else if(r)
-                rotate(vec3(1.0f,0.0f,0.0f), 0.1f);
-        }
-
-        if(OpenGLInput::isKeyPressed("down"))
-        {
-            if(t)
-                translate(vec3(0,-.1f,0));
-            else if(r)
-                rotate(vec3(1.0f,0.0f,0), -0.1f);
-        }
-
-        if(OpenGLInput::isKeyPressed("right"))
-        {
-            if(t)
-                translate(vec3(.1f,0,0));
-            else if(r)
-                rotate(vec3(0,0,1.0f), -0.1f);
-        }
-
-        if(OpenGLInput::isKeyPressed("left"))
-        {
-            if(t)
-                translate(vec3(-.1f,0,0));
-            else if(r)
-                rotate(vec3(0,0,1.0f), 0.1f);
-        }
-
-        if(OpenGLInput::isKeyPressed("r"))
-        {
-            r = true;
-            t = false;
-        }
-
-        if(OpenGLInput::isKeyPressed("t"))
-        {
-            r = false;
-            t = true;
-        }
-
-        glDrawElements(GL_TRIANGLES, static_cast<int>(m_indices.size()), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+        bindVAO();
+        glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+        unbindVAO();
     }
 
-    void Mesh::translate(vec3 translation)
+    void Mesh::bindVAO()
     {
-        m_transformationMatrix = glm::translate(m_transformationMatrix, translation);
+        glBindVertexArray(m_vao);
     }
 
-    void Mesh::rotate(vec3 angle, float rad)
+    void Mesh::unbindVAO()
     {
-        m_transformationMatrix = glm::rotate(m_transformationMatrix, rad, angle);
+        glBindVertexArray(0);
     }
 
-    void Mesh::prepareForRender(Shader *shader)
+    float Mesh::getVertex(int i)
     {
-        shader->start();
-        shader->bindVAO();    
-        shader->prepareReadData();
-        fillVertexBuffer();
-        fillIndexBuffer();
-        shader->unbindVAO();
-        shader->stop();
+        return m_vertices[i];
     }
 
-    mat4 Mesh::getTransformationMatrix()
+    int Mesh::getVertexNum()
     {
-        return m_transformationMatrix;
+        return m_vertices.size();
+    }
+
+    bool Mesh::hasTextureCoordinates()
+    {
+        return m_textureCoordinates.size() > 0;
     }
 
     //-----------------------------------------PRIVATE------------------------------------------//
-    
-    void Mesh::fillVertexBuffer()
+    void Mesh::prepare()
     {
+        //Gen VAO
+        glGenVertexArrays(1, &m_vao);
+
+        //Bind VAO
+        bindVAO();
+        
+        //Gen buffers
+        glGenBuffers( 1, &m_vBuffer);
+        glBindBuffer( GL_ARRAY_BUFFER, m_vBuffer);
+
+        glGenBuffers(1, &m_iBuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_iBuffer);
+
+        //Fill buffers
         size_t vSize = m_vertices.size()*sizeof(float);
+        size_t nSize = m_normals.size()*sizeof(float);
+        size_t tSize = m_textureCoordinates.size()*sizeof(float);
 
-        glBufferData(GL_ARRAY_BUFFER, vSize, m_vertices.data(), GL_STATIC_DRAW);
-    }
+        glBufferData(GL_ARRAY_BUFFER, vSize + nSize + tSize, NULL, GL_STATIC_DRAW); 
+        glBufferSubData(GL_ARRAY_BUFFER, 0, vSize, m_vertices.data()); 
+        glBufferSubData(GL_ARRAY_BUFFER, vSize, nSize, m_normals.data());
+        glBufferSubData(GL_ARRAY_BUFFER, vSize + nSize, tSize, m_textureCoordinates.data());
 
-    void Mesh::fillIndexBuffer()
-    {
-        size_t iSize = m_indices.size()*sizeof(unsigned int);
-
+        size_t iSize = m_indices.size()*sizeof(unsigned int); 
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize, m_indices.data(), GL_STATIC_DRAW);
+
+        //Vertex Positions
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+        glEnableVertexAttribArray(0);
+
+        //Normals
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vSize)); 
+        glEnableVertexAttribArray(1);
+
+        //Texture coordinates
+        glEnableVertexAttribArray(2);	
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(vSize + nSize));
+
+        //Unbind VAO
+        unbindVAO();
     }
 }

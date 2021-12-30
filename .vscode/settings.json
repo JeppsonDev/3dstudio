@@ -79,6 +79,7 @@
         "__tree": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "ios": "cpp"
     }
 }

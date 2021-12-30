@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <unordered_map>
+#include <string>
 
 #define BUFFER_OFFSET(i) (reinterpret_cast<char*>(0 + (i)))
 
@@ -24,20 +26,30 @@ namespace Umu
             Shader(std::string vshader, std::string fshader);
             ~Shader(void);
 
+            void setMat4(std::string uniformKey, mat4 modelMatrix);
+            void setVec3(std::string uniformKey, vec3 vector);
+            void setFloat(std::string uniformKey, float val);
+            void setInt(std::string uniformKey, int val);
+            
+            GLuint getProperty(std::string key);
+
             void start();
-            void bindVAO();
-            void prepareReadData();
-            void unbindVAO();
             void stop();
 
         protected:
+            std::unordered_map<std::string, GLuint> m_properties;
             GLuint m_program;
-            //TODO: write m_ infront of these or potentially figure out where to place them eleswhere
-            //should probably not be placed in base shader class 
-            GLuint vao;
-            GLuint vBuffer;
-            GLuint iBuffer;
-            GLuint locVertices;
+            GLuint m_vPosition;
+            GLuint m_vNormal;
+            GLuint m_uModel;
+            GLuint m_uProjection;
+            GLuint m_uView;
+            GLuint m_uLightPosition;
+            GLuint m_uAmbientLight;
+            GLuint m_uLightIntensity;
+            GLuint m_uAmbientConstant;
+            GLuint m_uDiffuseConstant;
+            GLuint m_uSpecularConstant; 
 
         private:
             GLuint initProgram(std::string vshader, std::string fshader);
