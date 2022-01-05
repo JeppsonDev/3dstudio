@@ -17,11 +17,17 @@ namespace Umu
             int m_Width = 0;
             int m_Height = 0;
             int m_BPP = 0;
+            bool m_hasdata = true;
+            bool m_show = true;
 
         public:
             Texture2D(std::string path);
+            Texture2D();
             ~Texture2D();
-            void bind(unsigned int slot);
+            bool bind(unsigned int slot);
             void unbind();
+            void show();
+            void hide();
+            bool shouldShow();
     };
 }

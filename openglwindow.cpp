@@ -44,11 +44,9 @@ namespace Umu
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
-        //ImGui::StyleColorsClassic();
 
         // Set Platform/Renderer backends
         ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
@@ -70,7 +68,6 @@ namespace Umu
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
-
     void OpenGLWindow::DrawGui()
     {
         Gui::render();

@@ -13,6 +13,7 @@ namespace Umu
             ~Object();
             Model *getModel();
             Transform *getTransform();
+            virtual void update();
             
         private:
             Model *m_pModel;

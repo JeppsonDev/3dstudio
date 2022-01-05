@@ -46,7 +46,7 @@ namespace Umu
 
     struct OnUpdateLightEvent
     {
-        float position[3] = {0.0f, 0.0f, 0.0f};
+        float position[3] = {-10.0f, 4.0f, 1.0f};
         float lightColor[3] = {1.0f, 1.0f, 1.0f};
         float ambientColor[3] = {0.2f, 0.2f, 0.2f};
 
@@ -61,6 +61,11 @@ namespace Umu
         bool textureShow = false;  
     };
 
+    struct OnTextureOpen
+    {
+        std::string filepath = "";
+    };
+
     class Gui
     {
         private:
@@ -69,6 +74,7 @@ namespace Umu
             static Observer<OpenObjectEvent> *m_openObjectObserver;
             static Observer<OnUpdateLightEvent> *m_onUpdateLightObserver;
             static Observer<OnTextureToggle> *m_onTextureToggle;
+            static Observer<OnTextureOpen> *m_onTextureOpen;
 
             static void renderObjFileCategory();
             static void renderProjectionCategory(ImGuiSliderFlags flags);
@@ -81,5 +87,6 @@ namespace Umu
             static Observer<OpenObjectEvent> *getOpenObjectObserver();
             static Observer<OnUpdateLightEvent> *getOnUpdateLightObserver();
             static Observer<OnTextureToggle> *getOnTextureToggle();
+            static Observer<OnTextureOpen> *getOnTextureOpen();
     };
 }

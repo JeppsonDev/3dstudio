@@ -3,7 +3,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <fstream>
 #include <memory>
 #include <cmath>
 #include <vector>
@@ -13,6 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <unordered_map>
 #include <string>
+#include <fstream>
+#include <sstream>
 
 #define BUFFER_OFFSET(i) (reinterpret_cast<char*>(0 + (i)))
 
@@ -24,6 +25,7 @@ namespace Umu
     {
         public:
             Shader(std::string vshader, std::string fshader);
+            Shader();
             ~Shader(void);
 
             void setMat4(std::string uniformKey, mat4 modelMatrix);
@@ -39,20 +41,8 @@ namespace Umu
         protected:
             std::unordered_map<std::string, GLuint> m_properties;
             GLuint m_program;
-            GLuint m_vPosition;
-            GLuint m_vNormal;
-            GLuint m_uModel;
-            GLuint m_uProjection;
-            GLuint m_uView;
-            GLuint m_uLightPosition;
-            GLuint m_uAmbientLight;
-            GLuint m_uLightIntensity;
-            GLuint m_uAmbientConstant;
-            GLuint m_uDiffuseConstant;
-            GLuint m_uSpecularConstant; 
-
-        private:
             GLuint initProgram(std::string vshader, std::string fshader);
+            void checkCompileErrors(GLuint shader, std::string type);
             std::string readShaderSource(const std::string shaderFile);
     };
 }

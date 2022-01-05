@@ -39,6 +39,10 @@ namespace Umu
             glm::mat4 getViewMatrix();
             glm::mat4 getProjectionMatrix();
             Observer<OnCameraUpdateEvent> *getOnCameraUpdateObserver();
+
+            void usePerspectiveProjection();
+            void useOrthographicProjection();
+            glm::mat4 useDirectionalLightProjection(glm::vec3 lightPosition);
         
         private:
             glm::mat4 m_viewMatrix;
@@ -57,8 +61,8 @@ namespace Umu
 
             //Projection
             float m_nearPlane = 1.0f;
-            float m_farPlane = 500.0f;
-            float m_fov = 60.0f;
+            float m_farPlane = 100.0f;
+            float m_fov = 45.0f;
             float m_top = 1.0f;
             float m_oblscale = 0.0f;
             float m_oblrad = 3.14567f/4.0f; //45 degrees

@@ -21,18 +21,21 @@ namespace Umu
     {
         public:
             Model(std::vector<Mesh*> meshes, Shader *shader);
+            Model(std::vector<Mesh*> meshes, Texture2D *texture, Shader *shader);
             ~Model(void);
-        
+
             Mesh *getMesh(int i);
             int getMeshNum();
             std::vector<Mesh*> getMeshes();
             Shader *getShader();
             bool hasTextureCoordinates();
+            Texture2D *getTexture();
         private:
             std::vector<Mesh*> m_pMeshes;
             Shader *m_pShader;
             Texture2D *m_pTexture;
 
             void onTextureToggle(OnTextureToggle event);
+            void onTextureOpen(OnTextureOpen event);
     };
 }

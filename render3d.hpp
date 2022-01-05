@@ -24,9 +24,16 @@ namespace Umu
             ~Render3D(void);
 
             void render();
-            void renderObject(Object *object);
+            void renderObject(Object *object, bool shadowflag);
+            void bindDepthMap();
+            void unbindDepthMap();
+            int getDepthMap();
+            void useShader(Shader *shader);
 
             void add(Model *model);
             void loadModel(std::string filePath);
+
+        private:
+            Shader *m_pShader;
     };
 }

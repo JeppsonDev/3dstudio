@@ -6,15 +6,19 @@ namespace Umu
     {
         m_pMeshes = meshes;
         m_pShader = shader;
-    
-        Gui::getOnTextureToggle()->registerEvent(std::bind(&Model::onTextureToggle, this, std::placeholders::_1));
+        m_pTexture = new Texture2D();
+    }
 
-        if(hasTextureCoordinates())
-        {
-            m_pTexture = new Texture2D("models/bricks.bmp");
-            m_pTexture->bind(0);
-            shader->setInt("u_Texture", 0);
-        }
+    Model::Model(std::vector<Mesh*> meshes, Texture2D *texture, Shader *shader)
+    {
+        m_pMeshes = meshes;
+        m_pShader = shader;
+        m_pTexture = texture;
+
+        //TODO: This event currently runs twice
+        Gui::getOnTextureToggle()->registerEvent(std::bind(&Model::onTextureToggle, this, std::placeholders::_1));
+        
+        Gui::getOnTextureOpen()->registerEvent(std::bind(&Model::onTextureOpen, this, std::placeholders::_1));
     }
 
     Model::~Model()
@@ -32,6 +36,7 @@ namespace Umu
         }
 
         Gui::getOnTextureToggle()->clearEvents();
+        Gui::getOnTextureOpen()->clearEvents();
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
@@ -66,6 +71,11 @@ namespace Umu
         }
     }
 
+    Texture2D *Model::getTexture()
+    {
+        return m_pTexture;
+    }
+
     //-----------------------------------------PRIVATE------------------------------------------//
     void Model::onTextureToggle(OnTextureToggle event)
     {
@@ -76,86 +86,27 @@ namespace Umu
 
         if(event.textureShow)
         {
-            m_pTexture->bind(0);
+            m_pTexture->show();
+            //m_pTexture->bind(0);
         }
         else
         {
-            m_pTexture->unbind();
+            m_pTexture->hide();
+            //m_pTexture->unbind();
         }
     }
 
+    void Model::onTextureOpen(OnTextureOpen event)
+    {
+        if(m_pTexture != nullptr)
+        {
+            delete m_pTexture;
+        }
+
+        m_pTexture = new Texture2D(event.filepath);
+        m_pTexture->show();
+
+        //TODO: This event currently runs twice
+        Gui::getOnTextureToggle()->registerEvent(std::bind(&Model::onTextureToggle, this, std::placeholders::_1));
+    }
 }
-//TODO: Implement this back in
-
-        /*
-        if(OpenGLInput::isKeyPressed("up"))
-        {
-            if(t)
-                translate(vec3(0,.1f,0));
-            else if(r)
-                rotate(vec3(1.0f,0.0f,0.0f), 0.174532925f);
-            else if(s)
-                scale(vec3(1.0f, 1.1f, 1.0f));
-        }
-
-        if(OpenGLInput::isKeyPressed("down"))
-        {
-            if(t)
-                translate(vec3(0,-.1f,0));
-            else if(r)
-                rotate(vec3(1.0f,0.0f,0), -0.174532925f);
-            else if(s)
-                scale(vec3(1.0f, 0.9f, 1.0f));
-        }
-
-        if(OpenGLInput::isKeyPressed("right"))
-        {
-            if(t)
-                translate(vec3(.1f,0,0));
-            else if(r)
-                rotate(vec3(0.0f,1.0f,0.0f), -0.174532925f);
-            else if(s)
-                scale(vec3(1.1f, 1.0f, 1.0f));
-        }
-
-        if(OpenGLInput::isKeyPressed("left"))
-        {
-            if(t)
-                translate(vec3(-.1f,0,0));
-            else if(r)
-                rotate(vec3(0.05f,1.0f,0.0f), 0.174532925f);
-            else if(s)
-                scale(vec3(0.9f, 1.0f, 1.0f));
-        }
-
-        if(OpenGLInput::isKeyPressed("r"))
-        {
-            r = true;
-            t = false;
-            s = false;
-        }
-
-        if(OpenGLInput::isKeyPressed("t"))
-        {
-            r = false;
-            t = true;
-            s = false;
-        }
-
-        if(OpenGLInput::isKeyPressed("s"))
-        {
-            r = false;
-            t = false;
-            s = true;
-        }
-*/
-        /*
-        m_pShader->start();
-        m_pMesh->bindVAO();
-
-        m_pMesh->render();
-        m_pShader->setMat4("u_Model", m_modelMatrix);
-        
-        m_pMesh->unbindVAO();
-        m_pShader->stop();
-        */

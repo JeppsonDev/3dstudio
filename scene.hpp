@@ -22,6 +22,8 @@ namespace Umu
 
         private:
             Shader *m_pMainShader;
+            Shader *m_pDepthShader;
+            
             Camera *m_pCamera;
             Light *m_pLight;
             std::vector<Object*> m_objects;

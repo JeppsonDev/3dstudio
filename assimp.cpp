@@ -41,6 +41,16 @@ namespace Umu
 
         outResult.meshes = meshes;
 
+        for(uint i = 0; i < outResult.meshes.size(); i++)
+        {
+            for(uint j = 0; j < outResult.meshes[i].normals.size(); j++)
+            {
+                std::cout << "Normal[" << i << "," << j << "]: " << outResult.meshes[i].normals[j] << std::endl;
+            }
+
+            //std::cout << "Normls: " << outResult.meshes[i].normals.size() << std::endl;
+        }
+
         return outResult;
     }
 

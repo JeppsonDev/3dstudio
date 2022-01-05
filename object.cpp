@@ -16,6 +16,11 @@ namespace Umu
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
+    void Object::update()
+    {
+        
+    }
+
     Model *Object::getModel()
     {
         return m_pModel;

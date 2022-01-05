@@ -9,6 +9,9 @@ namespace Umu
 {
     Texture2D::Texture2D(std::string path)
     {
+        m_show = true;
+        m_hasdata = true;
+
         stbi_set_flip_vertically_on_load(1);
         m_LocalBuffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_BPP, 0);
 
@@ -44,9 +47,15 @@ namespace Umu
         }
         else
         {
-            std::cout << "Failed to load texture" << std::endl;
+            std::cout << "Failed to load texture: " << path << std::endl;
             stbi_image_free(m_LocalBuffer);
         }
+    }
+
+    Texture2D::Texture2D()
+    {
+        m_hasdata = false;
+        m_show = false;
     }
 
     Texture2D::~Texture2D()
@@ -54,14 +63,40 @@ namespace Umu
         glDeleteTextures(1, &m_RendererId);
     }
 
-    void Texture2D::bind(unsigned int slot)
+    bool Texture2D::bind(unsigned int slot)
     {
+        if(!m_hasdata)
+        {
+            return false;
+        }
+
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, m_RendererId);
+        return true;
     }
 
     void Texture2D::unbind()
     {
+        if(!m_hasdata)
+        {
+            return;
+        }
+        
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    void Texture2D::show()
+    {
+        m_show = true;
+    }
+
+    void Texture2D::hide()
+    {
+        m_show = false;
+    }
+    
+    bool Texture2D::shouldShow()
+    {
+        return m_show;
     }
 }

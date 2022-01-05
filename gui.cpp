@@ -2,18 +2,22 @@
 
 namespace Umu
 {
+    //TODO: Fix this....
     Observer<UpdatePerspectiveEvent> *Gui::m_updatePerspectiveObserver = new Observer<UpdatePerspectiveEvent>();
     Observer<UpdateOrthographicEvent> *Gui::m_updateOrthographicObserver = new Observer<UpdateOrthographicEvent>();
     Observer<OpenObjectEvent> *Gui::m_openObjectObserver = new Observer<OpenObjectEvent>();
     Observer<OnUpdateLightEvent> *Gui::m_onUpdateLightObserver = new Observer<OnUpdateLightEvent>();
     Observer<OnTextureToggle> *Gui::m_onTextureToggle = new Observer<OnTextureToggle>();
+    Observer<OnTextureOpen> *Gui::m_onTextureOpen = new Observer<OnTextureOpen>();
 
     UpdatePerspectiveEvent updatePerspectiveEvent;
     OpenObjectEvent openObjectEvent;
     UpdateOrthographicEvent updateOrthographicEvent;
     OnUpdateLightEvent updateLightEvent;
     OnTextureToggle textureToggleEvent;
+    OnTextureOpen textureOpenEvent;
 
+    //TODO: Yikes
     static bool first = true;
 
     //-----------------------------------------PUBLIC------------------------------------------//
@@ -63,6 +67,11 @@ namespace Umu
     Observer<OnTextureToggle> *Gui::getOnTextureToggle()
     {
         return m_onTextureToggle;
+    }
+
+    Observer<OnTextureOpen> *Gui::getOnTextureOpen()
+    {
+        return m_onTextureOpen;
     }
 
     //-----------------------------------------PRIVATE------------------------------------------//  
@@ -132,7 +141,6 @@ namespace Umu
     {
         static std::string textureFileName;
         static std::string textureFilePath;
-        static bool textureShow = false;
 
         if (ImGui::CollapsingHeader("Light")) 
         {
@@ -182,7 +190,10 @@ namespace Umu
                 {
                     textureFileName = igfd::ImGuiFileDialog::Instance()->GetCurrentFileName();
                     textureFilePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
-                    std::cout << "Texture file: " << textureFileName << std::endl << "Path: " << textureFilePath << std::endl;
+
+                    textureOpenEvent.filepath = textureFilePath + "/" + textureFileName;
+
+                    Gui::getOnTextureOpen()->invokeEvents(textureOpenEvent);
                 } 
                 else 
                 {
