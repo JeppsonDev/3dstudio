@@ -1,40 +1,33 @@
 #include "texture2d.hpp"
-
-#ifndef STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#endif
+#include "image.hpp"
+#include <vector>
 
 namespace Umu
 {
     Texture2D::Texture2D(std::string path)
     {
-        m_show = true;
+        m_show = false;
         m_hasdata = true;
 
-        stbi_set_flip_vertically_on_load(1);
-        m_LocalBuffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_BPP, 0);
+        Image::flipYOnLoad();
+        m_data = Image::load(path, &m_width, &m_height, &channels, 0);
 
-        if(m_LocalBuffer)
+        if(m_data)
         {
             GLenum format;
-            if (m_BPP == 1)
+
+            switch(channels)
             {
-                format = GL_RED;
-            }   
-            else if (m_BPP == 3)
-            {
-                format = GL_RGB;
+                case 1: format = GL_LUMINANCE; break;
+                case 2: format = GL_LUMINANCE_ALPHA; break;
+                case 3: format = GL_RGB; break;
+                case 4: format = GL_RGBA; break;
             }
-            else if (m_BPP == 4)
-            {
-                format = GL_RGBA;
-            }   
 
-            glGenTextures(1, &m_RendererId);
-            glBindTexture(GL_TEXTURE_2D, m_RendererId);
+            glGenTextures(1, &m_id);
+            glBindTexture(GL_TEXTURE_2D, m_id);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, format, m_Width, m_Height, 0, format, GL_UNSIGNED_BYTE, m_LocalBuffer);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, m_data);
             glGenerateMipmap(GL_TEXTURE_2D);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -43,12 +36,12 @@ namespace Umu
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindTexture(GL_TEXTURE_2D, 0);
-            stbi_image_free(m_LocalBuffer);
+            Image::free(m_data);
         }
         else
         {
             std::cout << "Failed to load texture: " << path << std::endl;
-            stbi_image_free(m_LocalBuffer);
+            Image::free(m_data);
         }
     }
 
@@ -60,9 +53,17 @@ namespace Umu
 
     Texture2D::~Texture2D()
     {
-        glDeleteTextures(1, &m_RendererId);
+        if(!m_hasdata)
+        {
+            return;
+        }
+
+        std::cout << "Freeing Texture2D" << std::endl;
+
+        glDeleteTextures(1, &m_id);
     }
 
+    //-----------------------------------------PUBLIC------------------------------------------//
     bool Texture2D::bind(unsigned int slot)
     {
         if(!m_hasdata)
@@ -71,7 +72,8 @@ namespace Umu
         }
 
         glActiveTexture(GL_TEXTURE0 + slot);
-        glBindTexture(GL_TEXTURE_2D, m_RendererId);
+        glBindTexture(GL_TEXTURE_2D, m_id);
+
         return true;
     }
 

@@ -1,31 +1,48 @@
-#pragma once
+/**
+ * @file camera.hpp
+ * @author Jesper Byström (dv19jbm@cs.umu.se)
+ *
+ * @brief The class responsible for handling the first person camera in the scene
+ *
+ * @version 0.1
+ * @date 2022-01-13
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/matrix4x4.h>
-#include <assimp/cimport.h>
+#pragma once
 
 #include <iostream>
 #include <stdint.h>
 #include <vector>
-#include "mesh.hpp"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "openglinput.hpp"
+
+#include "mesh.hpp"
 #include "gui.hpp"
 #include "observer.hpp"
+#include "openglinput.hpp"
 
 namespace Umu
 {
+    //consts
     const glm::vec3 UP = glm::vec3(0.0f, 1.0f, 0.0f);
+    const int PERSPECTIVE = 0;
+    const int ORTHOGRAPHIC = 1;
 
+    /**
+     * @brief Camera update event
+     * 
+     */
     struct OnCameraUpdateEvent
     {
+        glm::vec3 position;
         glm::mat4 viewMatrix;
         glm::mat4 projectionMatrix;
     };
@@ -33,16 +50,69 @@ namespace Umu
     class Camera
     {
         public:
+            /**
+             * @brief Construct a new Camera object
+             * 
+             */
             Camera();
+
+            /**
+             * @brief Destroy the Camera object
+             * 
+             */
             ~Camera();
+
+            /**
+             * @brief Update the Camera object
+             * 
+             */
             void update();
+
+            /**
+             * @brief Get the View Matrix object
+             * 
+             * @return glm::mat4 
+             */
             glm::mat4 getViewMatrix();
+
+            /**
+             * @brief Get the Projection Matrix object
+             * 
+             * @return glm::mat4 
+             */
             glm::mat4 getProjectionMatrix();
+
+            /**
+             * @brief Get the On Camera Update Observer object
+             * 
+             * @return Observer<OnCameraUpdateEvent>* 
+             */
             Observer<OnCameraUpdateEvent> *getOnCameraUpdateObserver();
 
+            /**
+             * @brief Use the perspective projection
+             * 
+             */
             void usePerspectiveProjection();
+
+            /**
+             * @brief Use orthographic projection
+             * 
+             */
             void useOrthographicProjection();
-            glm::mat4 useDirectionalLightProjection(glm::vec3 lightPosition);
+
+            /**
+             * @brief Update the projection
+             * 
+             */
+            void updateProjection();
+
+            /**
+             * @brief Get the position
+             * 
+             * @return glm::vec3 
+             */
+            glm::vec3 getPosition();
         
         private:
             glm::mat4 m_viewMatrix;
@@ -60,12 +130,12 @@ namespace Umu
             float m_pitch = 0.0f;
 
             //Projection
-            float m_nearPlane = 1.0f;
-            float m_farPlane = 100.0f;
-            float m_fov = 45.0f;
+            float m_farPlane = 500.0f;
+            float m_fov = 60.0f;
             float m_top = 1.0f;
             float m_oblscale = 0.0f;
             float m_oblrad = 3.14567f/4.0f; //45 degrees
+            int m_projectionType = PERSPECTIVE;
 
             bool m_updateProjection = false;
             bool m_updateOrtho = false;
@@ -73,9 +143,32 @@ namespace Umu
             //Observers
             Observer<OnCameraUpdateEvent> *m_pOnCameraUpdateObserver;
 
-            //Methods
+            /**
+             * @brief On mouse update event
+             * 
+             * @param inputEvent 
+             */
             void onMouseUpdate(MouseInputEvent inputEvent);
+
+            /**
+             * @brief Update the orthographic projection event
+             * 
+             * @param event 
+             */
             void onOrthographicUpdate(UpdateOrthographicEvent event);
+
+            /**
+             * @brief Update the perspective projection event
+             * 
+             * @param event 
+             */
             void onPerspectiveProjectionUpdate(UpdatePerspectiveEvent event);
+
+            /**
+             * @brief Update the shader event
+             * 
+             * @param event 
+             */
+            void onShaderUpdate(OnUpdateShaderEvent event);
     };
 }

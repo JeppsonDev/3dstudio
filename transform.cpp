@@ -23,6 +23,11 @@ namespace Umu
         m_modelMatrix = glm::scale(m_modelMatrix, scale);
     }
 
+    void Transform::setMatrix(glm::mat4 mat)
+    {
+        m_modelMatrix = mat;
+    }
+
     glm::mat4 Transform::getMatrix()
     {
         return m_modelMatrix;

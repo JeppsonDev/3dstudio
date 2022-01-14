@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "global.hpp"
 
 namespace Umu
 {
@@ -22,12 +23,11 @@ namespace Umu
         );
 
         usePerspectiveProjection();
-
-        //m_projectionMatrix = glm::perspective(glm::radians(45.0f), 960.0f/540.0f, 0.1f, 100.0f);
-
+        
         OpenGLInput::getMouseInputObserver()->registerEvent(std::bind(&Camera::onMouseUpdate, this, std::placeholders::_1));
         Gui::getUpdatePerspectiveObserver()->registerEvent(std::bind(&Camera::onPerspectiveProjectionUpdate, this, std::placeholders::_1));
         Gui::getUpdateOrthographicObserver()->registerEvent(std::bind(&Camera::onOrthographicUpdate, this, std::placeholders::_1));
+        Gui::getOnUpdateShaderEvent()->registerEvent(std::bind(&Camera::onShaderUpdate, this, std::placeholders::_1));
     }
 
     Camera::~Camera()
@@ -61,38 +61,46 @@ namespace Umu
         }
         if(OpenGLInput::isKeyPressed("e"))
         {
-            m_position -= speed * m_up;   
+            m_position -= speed * m_up;
         }
         
         m_updateViewMatrix = (m_position != m_oldPosition) || m_updateViewMatrix;
 
-        if(m_updateViewMatrix || first) //just makse sure so we update on the first frame...
+        if(m_updateViewMatrix || first) //just make sure so we update on the first frame...
         {
             m_viewMatrix = glm::lookAt(m_position, m_position + m_front, m_up);
             m_oldPosition = m_position;
-            m_pOnCameraUpdateObserver->invokeEvents({m_viewMatrix, m_projectionMatrix});
+            m_pOnCameraUpdateObserver->invokeEvents({m_position, m_viewMatrix, m_projectionMatrix});
         }
 
         //Skip the first frame for the input
         first = OpenGLInput::isKeyPressed("shift");
     }
 
+    void Camera::updateProjection()
+    {
+        if(m_projectionType == PERSPECTIVE)
+        {
+            usePerspectiveProjection();
+        }
+        else if(m_projectionType == ORTHOGRAPHIC)
+        {
+            useOrthographicProjection();
+        }
+    }
+
     void Camera::usePerspectiveProjection()
     {
-        //TODO: Don't hardcode screen w&h
-        //FIXME: don't hardcode neraplane
-        m_projectionMatrix = glm::perspective(glm::radians(m_fov), 960.0f/540.0f, 0.1f, m_farPlane);
+        m_projectionMatrix = glm::perspective(glm::radians(m_fov), float(Global::window_width)/float(Global::window_height), 0.1f, m_farPlane);
     }
 
     void Camera::useOrthographicProjection()
     {
-        //TODO: Don't hardcode screen w&h
-        float aspect = 960.0f/540.0f;
+        float aspect = float(Global::window_width)/float(Global::window_height);
         float bottom = -m_top;
         float right = m_top * aspect;
         float left = -right;
 
-        //FIXME: don't hardcode neraplane
         m_projectionMatrix = glm::ortho(left, right, bottom, m_top, 0.1f, m_farPlane);
     
         glm::mat4 H = glm::identity<glm::mat4>();
@@ -101,20 +109,6 @@ namespace Umu
         H[2][1] = m_oblscale * sin(m_oblrad);
 
         m_projectionMatrix *= H;
-
-    }
-
-    glm::mat4 Camera::useDirectionalLightProjection(glm::vec3 lightPosition)
-    {
-        //FIXME: don't hardcode neraplane
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 20.0f);
-
-        //Look at center on screen from light position
-        glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-        
-        return lightSpaceMatrix;
     }
     
     glm::mat4 Camera::getViewMatrix()
@@ -132,7 +126,17 @@ namespace Umu
         return m_pOnCameraUpdateObserver;
     }
 
+    glm::vec3 Camera::getPosition()
+    {
+        return m_position;
+    }
+
     //-----------------------------------------PRIVATE------------------------------------------//
+    void Camera::onShaderUpdate(OnUpdateShaderEvent event)
+    {
+        m_updateViewMatrix = true;
+    }
+    
     void Camera::onPerspectiveProjectionUpdate(UpdatePerspectiveEvent event)
     {
         m_fov = event.fov;
@@ -140,7 +144,7 @@ namespace Umu
 
         usePerspectiveProjection();
 
-        m_pOnCameraUpdateObserver->invokeEvents({m_viewMatrix, m_projectionMatrix});
+        m_pOnCameraUpdateObserver->invokeEvents({m_position, m_viewMatrix, m_projectionMatrix});
     }
 
     void Camera::onOrthographicUpdate(UpdateOrthographicEvent event)
@@ -152,7 +156,7 @@ namespace Umu
 
         useOrthographicProjection();
 
-        m_pOnCameraUpdateObserver->invokeEvents({m_viewMatrix, m_projectionMatrix});
+        m_pOnCameraUpdateObserver->invokeEvents({m_position, m_viewMatrix, m_projectionMatrix});
     }
 
     void Camera::onMouseUpdate(MouseInputEvent inputEvent)

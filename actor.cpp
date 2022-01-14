@@ -3,14 +3,18 @@
 
 namespace Umu
 {
-    Actor::Actor(Model *model) : Object(model)
+    Actor::Actor(int id, Model *model) : Object(id, model)
     {
-
     }
 
     void Actor::update()
     {
         Object::update();
+
+        if(!m_enabled)
+        {
+            return;
+        }
 
         if(OpenGLInput::isKeyPressed("up"))
         {
@@ -47,7 +51,7 @@ namespace Umu
             if(t)
                 getTransform()->translate(vec3(-.1f,0,0));
             else if(r)
-                getTransform()->rotate(vec3(0.05f,1.0f,0.0f), 0.174532925f);
+                getTransform()->rotate(vec3(0.0f,1.0f,0.0f), 0.174532925f);
             else if(s)
                 getTransform()->scale(vec3(0.9f, 1.0f, 1.0f));
         }

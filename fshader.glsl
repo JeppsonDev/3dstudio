@@ -1,10 +1,13 @@
 #version 330
 
 uniform sampler2D u_Texture;
-uniform sampler2D u_ShadowMap; //For shadow mapping
+uniform sampler2D u_DepthTexture;
+
 uniform bool u_ShouldRenderTexture;
 
-//Light settings
+uniform vec3 u_CameraPosition;
+
+uniform vec3 u_LightPosition;
 uniform vec3 u_AmbientLight;
 uniform vec3 u_LightIntensity;
 uniform vec3 u_AmbientConstant;
@@ -12,65 +15,77 @@ uniform vec3 u_DiffuseConstant;
 uniform vec3 u_SpecularConstant;
 uniform float u_Shininess;
 
-in vec4 color;
-in vec2 v_TexCoords;
-
-in vec4 FragPosLightSpace; //shadow mapping
-in vec3 fN; // Normal vector
-in vec3 fE; // Direction of the viewer
-in vec3 fL; // Direction of the light
+in VS_OUT {
+    vec3 fragPos;
+    vec3 normal;
+    vec2 texCoords;
+    vec4 fragPosLightSpace;
+} fs_in;
 
 out vec4 fcolor;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightDirection)
 {
-    // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(u_ShadowMap, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    vec3 projectedCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projectedCoords = projectedCoords * 0.5 + 0.5;
+    float closestDepth = texture(u_DepthTexture, projectedCoords.xy).r; 
+    float currentDepth = projectedCoords.z;
+
+    float bias = max(0.05 * (1.0 - dot(fs_in.normal, lightDirection)), 0.005);
+
+    //Percentage Closer Filtering
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(u_DepthTexture, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float percentageCloserFiltering = texture(u_DepthTexture, projectedCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > percentageCloserFiltering ? 1.0 : 0.0;        
+        }    
+    }
+
+    shadow /= 9.0;
 
     return shadow;
 }
 
 void main()
 {
-    vec3 Ia = u_AmbientLight; //ambient light
-    vec3 Id = vec3(1.0, 1.0, 1.0); //diffuse light
-    vec3 Is = vec3(1.0, 1.0, 1.0) * 0.25; //specular light
+    vec4 texColor;
+    texColor = texture(u_Texture, fs_in.texCoords);
 
-    vec3 ka = u_AmbientConstant; //ambient constant
-    vec3 kd = u_DiffuseConstant; //diffuse constant
-    vec3 ks = u_SpecularConstant; //specular constant
+    vec3 viewDirection = normalize(vec3(u_CameraPosition - fs_in.fragPos)); //direction to the viewer
+    vec3 lightDirection = normalize(u_LightPosition - fs_in.fragPos); //direction of light
 
-    vec3 l = fL; //direction to light source from surface
-    vec4 v = vec4(-normalize(fE), 0.0); //direction to the viewer
-    float a = u_Shininess;
+    vec3 normal = fs_in.normal;
 
-    vec3 r = normalize(reflect(l, fN));//direction of reflection     //2 * (dot(fN, l)) * fN - l;
+    vec3 reflectionDirection = normalize(reflect(-lightDirection, normal));//direction of reflection     //2 * (dot(fN, l)) * fN - l;
 
-    vec3 Iambient = Ia * ka; //Multiply the ambient light by the ambient constant
-    vec3 Idiffuse = Id * kd * max(dot(fN, l), 0.0); //take the angle between the surface normal and the light direction and multiply by the light colour and diffuse constant
-    vec3 Ispecular = Is * ks * pow(max(dot(v.xyz, r), 0.0), a);
+    vec3 Iambient =  u_AmbientLight * u_AmbientConstant; //Multiply the ambient light by the ambient constant
 
-    float shadow = ShadowCalculation(FragPosLightSpace);
-    float s = 1.0 - shadow;
+    vec4 color;
+    float shadow = ShadowCalculation(fs_in.fragPosLightSpace, lightDirection);
 
-    vec4 light = vec4(0.0f, shadow, 0.0f, 1.0f);
-    light.rgb = ((Iambient + (s * (Idiffuse + Ispecular))) * u_LightIntensity * 2.5);
-    vec4 texColor = texture(u_Texture, v_TexCoords);
+    vec3 Idiffuse = u_LightIntensity * u_DiffuseConstant * max(dot(normal, lightDirection), 0.0);
 
-    if(u_ShouldRenderTexture)
+    if(dot(normal, lightDirection) > 0.0)
     {
-        fcolor = texColor * light;
+        vec3 Ispecular = u_LightIntensity * u_SpecularConstant * pow(max(dot(viewDirection, reflectionDirection), 0.0), u_Shininess);
+
+        color = vec4(Iambient + (1.0 - shadow) * (Idiffuse + Ispecular), 1.0);
     }
     else
     {
-        fcolor = light;
+        color = vec4(Iambient + Idiffuse, 1.0);
+    }
+
+    if(u_ShouldRenderTexture)
+    {
+        fcolor = texColor * color;
+    }
+    else
+    {
+        fcolor = color;
     }
 }

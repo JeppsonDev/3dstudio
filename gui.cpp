@@ -2,23 +2,29 @@
 
 namespace Umu
 {
-    //TODO: Fix this....
     Observer<UpdatePerspectiveEvent> *Gui::m_updatePerspectiveObserver = new Observer<UpdatePerspectiveEvent>();
     Observer<UpdateOrthographicEvent> *Gui::m_updateOrthographicObserver = new Observer<UpdateOrthographicEvent>();
     Observer<OpenObjectEvent> *Gui::m_openObjectObserver = new Observer<OpenObjectEvent>();
     Observer<OnUpdateLightEvent> *Gui::m_onUpdateLightObserver = new Observer<OnUpdateLightEvent>();
     Observer<OnTextureToggle> *Gui::m_onTextureToggle = new Observer<OnTextureToggle>();
     Observer<OnTextureOpen> *Gui::m_onTextureOpen = new Observer<OnTextureOpen>();
+    Observer<OnUpdateMaterialEvent> *Gui::m_onUpdateMaterialEvent = new Observer<OnUpdateMaterialEvent>();
+    Observer<OnUpdateShaderEvent> *Gui::m_onUpdateShaderEvent = new Observer<OnUpdateShaderEvent>();
+    Observer<OnSelectObjectEvent> *Gui::m_onSelectObjectObserver = new Observer<OnSelectObjectEvent>();
+    std::vector<int> Gui::m_objects;
 
-    UpdatePerspectiveEvent updatePerspectiveEvent;
-    OpenObjectEvent openObjectEvent;
-    UpdateOrthographicEvent updateOrthographicEvent;
-    OnUpdateLightEvent updateLightEvent;
-    OnTextureToggle textureToggleEvent;
-    OnTextureOpen textureOpenEvent;
+    static UpdatePerspectiveEvent updatePerspectiveEvent;
+    static OpenObjectEvent openObjectEvent;
+    static UpdateOrthographicEvent updateOrthographicEvent;
+    static OnUpdateLightEvent updateLightEvent;
+    static OnTextureToggle textureToggleEvent;
+    static OnTextureOpen textureOpenEvent;
+    static OnUpdateMaterialEvent onUpdateMaterialEvent;
+    static OnUpdateShaderEvent onUpdateShaderEvent;
+    static OnSelectObjectEvent onSelectObjectEvent;
 
-    //TODO: Yikes
     static bool first = true;
+    static std::vector<bool> checkboxes;
 
     //-----------------------------------------PUBLIC------------------------------------------//
     void Gui::render()
@@ -33,15 +39,31 @@ namespace Umu
         renderObjFileCategory();
         renderProjectionCategory(flags);
         renderLightCategory(flags);
+        renderChooseShaderCategory();
+        renderObjectsInSceneCategory();
 
-        //TODO: We're updating light on first frame... there HAS to be a better way to do this
         if(first)
         {
             Gui::getOnUpdateLightObserver()->invokeEvents(updateLightEvent);
+            Gui::getUpdatePerspectiveObserver()->invokeEvents(updatePerspectiveEvent);
+            Gui::getOnUpdateMaterialObserver()->invokeEvents(onUpdateMaterialEvent);
             first = false;
         }
 
         ImGui::End();
+    }
+
+    void Gui::destroy()
+    {
+        delete m_updatePerspectiveObserver;
+        delete m_updateOrthographicObserver;
+        delete m_openObjectObserver;
+        delete m_onUpdateLightObserver;
+        delete m_onTextureToggle;
+        delete m_onTextureOpen;
+        delete m_onUpdateMaterialEvent;
+        delete m_onUpdateShaderEvent;
+        delete m_onSelectObjectObserver;
     }
     
     Observer<UpdatePerspectiveEvent> *Gui::getUpdatePerspectiveObserver()
@@ -74,8 +96,22 @@ namespace Umu
         return m_onTextureOpen;
     }
 
-    //-----------------------------------------PRIVATE------------------------------------------//  
+    Observer<OnUpdateMaterialEvent> *Gui::getOnUpdateMaterialObserver()
+    {
+        return m_onUpdateMaterialEvent;
+    }
 
+    Observer<OnUpdateShaderEvent> *Gui::getOnUpdateShaderEvent()
+    {
+        return m_onUpdateShaderEvent;
+    }
+
+    Observer<OnSelectObjectEvent> *Gui::getOnSelectObjectObserver()
+    {
+        return m_onSelectObjectObserver;
+    }
+
+    //-----------------------------------------PRIVATE------------------------------------------//  
     void Gui::renderObjFileCategory()
     {
         std::string objFileName;
@@ -99,6 +135,7 @@ namespace Umu
                     //Invoke event
                     openObjectEvent.filepath = objFilePath + "/" + objFileName; 
                     Gui::getOpenObjectObserver()->invokeEvents(openObjectEvent);
+                    Gui::getOnUpdateMaterialObserver()->invokeEvents(onUpdateMaterialEvent);
 
                     std::cout << "OBJ file: " << objFileName << std::endl << "Path: " << objFilePath << "/" << objFileName << std::endl;
                 }
@@ -136,7 +173,7 @@ namespace Umu
             }
         }
     }
-
+    
     void Gui::renderLightCategory(ImGuiSliderFlags flags)
     {
         static std::string textureFileName;
@@ -162,18 +199,29 @@ namespace Umu
         
         if (ImGui::CollapsingHeader("Object Material")) 
         {
+            bool updated1 = false;
+            bool updated2 = false;
+            bool updated3 = false;
+
             ImGui::Text("Ambient coefficient:");
-            ImGui::ColorEdit3("Ambient color", updateLightEvent.materialAmbient);
+            updated1 = ImGui::ColorEdit3("Ambient color", onUpdateMaterialEvent.materialAmbient);
             
             ImGui::Text("Diffuse coefficient:");
-            ImGui::ColorEdit3("Diffuse color", updateLightEvent.materialDiffuse);
+            updated2 = ImGui::ColorEdit3("Diffuse color", onUpdateMaterialEvent.materialDiffuse);
             
             ImGui::Text("Specular coefficient:");
-            ImGui::ColorEdit3("Specular color", updateLightEvent.materialSpecular);
+            updated3 = ImGui::ColorEdit3("Specular color", onUpdateMaterialEvent.materialSpecular);
 
-            ImGui::SliderFloat("Shininess", &updateLightEvent.materialShininess, 1.0f, 1000.0f, "%1.0f", flags);
+            bool updated5 = ImGui::SliderFloat("Shininess", &onUpdateMaterialEvent.materialShininess, 1.0f, 1000.0f, "%1.0f", flags);
+            
+            bool updated4 = ImGui::SliderFloat("Outline Thickness", &onUpdateMaterialEvent.outlineThickness, 0.00f, 5.0f, "%0.01f", flags);
 
-            Gui::getOnUpdateLightObserver()->invokeEvents(updateLightEvent);
+            bool update = updated1 || updated2 || updated3 || updated4 || updated5;
+
+            if(update)
+            {
+                Gui::getOnUpdateMaterialObserver()->invokeEvents(onUpdateMaterialEvent);   
+            }
         }
         
         if (ImGui::CollapsingHeader("Object Texture")) 
@@ -197,7 +245,7 @@ namespace Umu
                 } 
                 else 
                 {
-                    // Return a message to the user if the file could not be opened
+                    std::cout << "Could not open the file" << std::endl;
                 }
 
                 igfd::ImGuiFileDialog::Instance()->CloseDialog("ChooseFileDlgKey");
@@ -205,5 +253,91 @@ namespace Umu
 
             Gui::getOnTextureToggle()->invokeEvents(textureToggleEvent);
         }
+    }
+
+    void Gui::renderChooseShaderCategory()
+    {
+        if (ImGui::CollapsingHeader("Shader")) 
+        {
+            std::vector<std::string> items;
+            items.push_back("Phong");
+            items.push_back("Gourad");
+            items.push_back("Toon");
+            static unsigned int id = 0;
+
+            if(ImGui::BeginListBox("Choose Shader"))
+            {
+                for (unsigned int i = 0; i < items.size(); i++)
+                {
+                    bool isSelected = (id == i);
+                    if (ImGui::Selectable(items[i].c_str(), isSelected))
+                    {
+                        id = i;
+                    }
+
+                    if(isSelected)
+                    {
+                        onUpdateShaderEvent.type = id;
+                        getOnUpdateShaderEvent()->invokeEvents(onUpdateShaderEvent);
+                        Gui::getOnUpdateLightObserver()->invokeEvents(updateLightEvent);
+                        Gui::getOnUpdateMaterialObserver()->invokeEvents(onUpdateMaterialEvent);
+                    }
+                }
+
+                ImGui::EndListBox();
+            }
+        }
+    }
+
+    void Gui::renderObjectsInSceneCategory()
+    {
+        if (ImGui::CollapsingHeader("Objects")) 
+        {
+            static unsigned int id = 0;
+
+            if(ImGui::BeginListBox("Objects in scene"))
+            {
+                for (unsigned int i = 0; i < m_objects.size(); i++)
+                {
+                    //const bool isSelected = (id == i);
+
+                    /*
+                    if (ImGui::Selectable(std::to_string(m_objects[i]).c_str(), isSelected))
+                    {
+                        id = i;
+                    }
+                    */
+
+                    char s[8];
+                    s[0] = 'T';
+                    s[1] = 'o';
+                    s[2] = 'g';
+                    s[3] = 'g';
+                    s[4] = 'l';
+                    s[5] = 'e';
+                    s[6] = *std::to_string(m_objects[i]).c_str();
+                    s[7] = '\0';
+
+                    bool a = checkboxes[i];
+                    
+                    if(ImGui::Checkbox(s, &a))
+                    {
+                        id = m_objects[i];
+                        onSelectObjectEvent.objectId = id;
+                        onSelectObjectEvent.flag = a;
+                        checkboxes[i] = a;
+                        Gui::getOnSelectObjectObserver()->invokeEvents(onSelectObjectEvent);
+                    }
+                }
+
+                ImGui::EndListBox();
+            }
+        }
+    }
+
+    void Gui::addObject(int objectId)
+    {
+        m_objects.push_back(objectId);
+        checkboxes.push_back(true);
     }
 }

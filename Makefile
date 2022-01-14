@@ -3,14 +3,14 @@
 #  Computer Graphics course
 #  Dept Computing Science, Umea University
 #  Stefan Johansson, stefanj@cs.umu.se
-#  Modified by Filip Henningsson, floop@cs.umu.se
+#  Modified by Filip Henningsson, floop@cs.umu.se, Jesper Byström, dv19jbm@cs.umu.se
 #
 SRC = ./
 OUT = $(SRC)
 IMGUI_DIR = ./ImGui
 TARGET = $(OUT)/main
 
-OBJS = $(OUT)/depthshader.o $(OUT)/actor.o $(OUT)/texture2d.o $(OUT)/light.o $(OUT)/transform.o $(OUT)/object.o $(OUT)/scene.o $(OUT)/model.o $(OUT)/main.o $(OUT)/assimp.o $(OUT)/openglwindow.o $(OUT)/render3d.o $(OUT)/shader.o $(OUT)/mesh.o $(OUT)/openglinput.o  $(OUT)/camera.o $(OUT)/gui.o \
+OBJS = $(OUT)/toonshader.o $(OUT)/shadowmap.o $(OUT)/depthshader.o $(OUT)/global.o $(OUT)/skybox.o $(OUT)/skyboxshader.o $(OUT)/image.o $(OUT)/actor.o $(OUT)/texture2d.o $(OUT)/light.o $(OUT)/transform.o $(OUT)/object.o $(OUT)/scene.o $(OUT)/model.o $(OUT)/main.o $(OUT)/assimp.o $(OUT)/openglwindow.o $(OUT)/render3d.o $(OUT)/shader.o $(OUT)/mesh.o $(OUT)/openglinput.o  $(OUT)/camera.o $(OUT)/gui.o \
 	$(IMGUI_DIR)/imgui.o \
 	$(IMGUI_DIR)/imgui_demo.o \
 	$(IMGUI_DIR)/imgui_draw.o \

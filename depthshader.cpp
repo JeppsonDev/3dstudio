@@ -2,9 +2,9 @@
 
 namespace Umu
 {
-    DepthShader::DepthShader(std::string vshader, std::string fshader) : Shader()
+    DepthShader::DepthShader(std::string vShader, std::string fShader) : Shader()
     {
-        m_program = initProgram(vshader, fshader);
+        m_program = initProgram(vShader, fShader);
 
         m_properties["vPosition"] = glGetAttribLocation(m_program, "vPosition");
         m_properties["u_Model"] = glGetUniformLocation(m_program, "u_Model");

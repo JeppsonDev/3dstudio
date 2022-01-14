@@ -1,12 +1,15 @@
 #include "openglwindow.hpp"
+#include "global.hpp"
 
 namespace Umu
 {
     OpenGLWindow::OpenGLWindow(std::string title, int width, int height)
     {
         if (!glfwInit())
-            //TODO: Print an error here
+        {
+            std::cerr << "Could not init OpenGL" << std::endl;
             return;
+        }
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -14,6 +17,10 @@ namespace Umu
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
         glfwWindow = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+
+    
+        Global::window_width = width;
+        Global::window_height = height;
 
         if (glfwWindow == nullptr) 
         {
@@ -27,6 +34,7 @@ namespace Umu
 
         glewExperimental = GL_TRUE;
         GLenum glewError = glewInit();
+
         if(glewError != GLEW_OK)
         {
             std::cout << "glew init error:" << std::endl << glewGetErrorString(glewError) << std::endl;
@@ -61,6 +69,8 @@ namespace Umu
 
     OpenGLWindow::~OpenGLWindow(void)
     {
+        std::cout << "Freeing OpenGLWindow" << std::endl;
+
         // Cleanup ImGui
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -68,11 +78,6 @@ namespace Umu
     }
 
     //-----------------------------------------PUBLIC------------------------------------------//
-    void OpenGLWindow::DrawGui()
-    {
-        Gui::render();
-    }
-
     void OpenGLWindow::start(Scene *scene, Render3D *renderer)
     {
         glfwSetKeyCallback(glfwWindow, OpenGLInput::onKeyEvent);
@@ -86,7 +91,7 @@ namespace Umu
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            DrawGui();
+            Gui::render();
 
             renderer->render();
             scene->render(renderer);
@@ -117,6 +122,11 @@ namespace Umu
             return;
 
         glViewport(0.0, 0.0, width, height);
+
+        Global::window_width = width;
+        Global::window_height = height;
+
+        Global::getOnUpdateWindowObserver()->invokeEvents({width, height});
     }
 
     //-----------------------------------------PRIVATE------------------------------------------//

@@ -14,7 +14,6 @@ namespace Umu
     static float lastMouseY;
 
     //-----------------------------------------PUBLIC------------------------------------------//
-
     void OpenGLInput::onMouseEvent(GLFWwindow *window, double xpos, double ypos)
     {
         MouseInputEvent mouseInputEvent;
